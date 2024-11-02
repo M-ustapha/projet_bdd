@@ -17,8 +17,8 @@
     </style>
 </head>
 <body>
-    <h1>Sessions pour le film</h1>
-    <a href="/">Retour à la liste des films</a>
+    <h1>Sessions pour le film----------------</h1>
+    <a href="/">Retour à la liste des films--------------------</a>
 
     <h2>Liste des séances :</h2>
     <div>
@@ -34,7 +34,9 @@
                     <p><strong>Prix du billet :</strong> <%= session.ticketPrice %> €</p>
                     <p><strong>Places disponibles :</strong> <%= session.availableSeats %></p>
                     <p><strong>Disponibilité en ligne :</strong> <%= session.onlineAvailability ? 'Oui' : 'Non' %></p>
-                    <p><strong>Nombre total de sièges réservés :</strong> <%= session.totalReservedSeats %> sièges</p>
+                    <a href="/reservation/<%= session._id %>" class="btn btn-primary">Réserver</a>
+
+
                 </div>
             <% }) %>
         <% } else { %>

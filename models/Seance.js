@@ -12,3 +12,9 @@ const SeanceSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Seance', SeanceSchema);
+
+
+
+
+
+

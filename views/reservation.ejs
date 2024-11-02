@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réservation de la Séance</title>
+    
+    <style>
+        .hidden {
+            display: none;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Réservation pour la Séance</h1>
+  
+    <p><strong>Date et Heure :</strong> <%= seance.dateTime ? seance.dateTime.toLocaleString() : 'Date non disponible' %></p>
+    <p><strong>Salle :</strong> <%= seance.room %></p>
+    <p><strong>Prix du billet :</strong> <%= seance.ticketPrice %> €</p>
+
+    <!-- Formulaire de réservation -->
+    <form id="reservation-form">
+        <input type="hidden" name="seanceId" value="<%= seance._id %>">
+
+        <div id="seat-container">
+            <label for="seat1">Réservez votre siège 1 :</label>
+            <input type="text" id="seat1" name="seats[]" placeholder="Siège (ex : A20)" required>
+        </div>
+
+        <div id="additional-seats"></div>
+
+        <button type="button" id="add-seat-button">Ajouter un autre siège</button>
+        <button type="submit">Finaliser la réservation</button>
+    </form>
+
+    <a href="/users">Retour à la liste des séances</a>
+
+    <!-- Pop-up pour les messages d'erreur -->
+    <div id="error-popup" class="popup hidden">
+        <p id="error-message"></p>
+        <button onclick="closePopup()">Fermer</button>
+    </div>
+
+    <script>
+        let seatCount = 1; // Compteur pour les sièges
+
+        document.getElementById('add-seat-button').addEventListener('click', function() {
+            seatCount++;
+            const additionalSeatsDiv = document.getElementById('additional-seats');
+            const newSeatInput = document.createElement('div');
+            newSeatInput.innerHTML = `
+                <label for="seat${seatCount}">Réservez votre siège ${seatCount} :</label>
+                <input type="text" id="seat${seatCount}" name="seats[]" placeholder="Siège (ex : A21)" required>
+            `;
+            additionalSeatsDiv.appendChild(newSeatInput);
+        });
+
+        // Gestionnaire de soumission du formulaire
+        document.getElementById('reservation-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            data.seats = formData.getAll('seats[]'); // Obtenir tous les sièges
+
+            try {
+                const response = await fetch('/submit-reservation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json(); // Récupérer le résultat JSON
+                if (!response.ok) {
+                    showPopup(result.message); // Afficher le message d'erreur
+                } else {
+                    showPopup(result.message); // Afficher le message de succès
+                }
+                
+            } catch (error) {
+                console.error("Erreur lors de la réservation :", error);
+                showPopup("Erreur interne du serveur");
+            }
+        });
+
+        // Afficher la pop-up d'erreur
+        function showPopup(message) {
+            const popup = document.getElementById('error-popup');
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            popup.classList.remove('hidden');
+        }
+
+        // Fermer la pop-up d'erreur
+        function closePopup() {
+            const popup = document.getElementById('error-popup');
+            popup.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
