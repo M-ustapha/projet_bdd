@@ -1,6 +1,13 @@
+// models/Movie.js
 const mongoose = require('mongoose');
+const reviewSchema = new mongoose.Schema({
+    userName: { type: String, default: 'Anonymous' },
+    rating: { type: Number, min: 1, max: 5 },
+    comment: { type: String },
+    createdAt: { type: Date, default: Date.now }
+}, { strict: false }); // Autorise des champs dynamiques
 
-const MovieSchema = new mongoose.Schema({
+const movieSchema = new mongoose.Schema({
     title: { type: String, required: true },
     releaseYear: Number,
     duration: Number,
@@ -14,8 +21,10 @@ const MovieSchema = new mongoose.Schema({
     poster: String,
     format: String,
     productionStudio: String,
-    releaseDate: Date
+    releaseDate: Date,
+    reviews: [reviewSchema] // Intégration des avis directement dans le film
 });
+// Ajouter l'index pour reviews.rating
+movieSchema.index({ 'reviews.rating': 1 });
 
-const Movie = mongoose.model('Movie', MovieSchema);
-module.exports = Movie;
+module.exports = mongoose.model('Movie', movieSchema);

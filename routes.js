@@ -4,6 +4,9 @@ const Movie = require('./models/Movie');
 const Seance = require('./models/Seance');
 const multer = require('multer');
 const path = require('path');
+const Review = require('./models/Review'); // Add this line
+
+
 
 
 
@@ -19,11 +22,38 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+
 // Route principale
+//router.get('/', async (req, res) => {
+//    try {
+//        const movies = await Movie.find();
+//        const reviews = await Review.find(); // Fetch all reviews
+//        res.render('index', { movies, reviews }); // Pass both movies and reviews to the view
+//    } catch (error) {
+//        console.error(error);
+//        res.status(500).send('Erreur lors de la récupération des films et des avis.');
+//    }
+//});
+
+
+// Route principale pour afficher tous les films avec la note moyenne
 router.get('/', async (req, res) => {
-    const movies = await Movie.find();
-    res.render('index', { movies });
+    try {
+        const movies = await Movie.aggregate([
+            {
+                $addFields: {
+                    averageRating: { $avg: "$reviews.rating" } // Calcul de la note moyenne
+                }
+            }
+        ]);
+
+        res.render('index', { movies }); // On passe "movies" dans la vue, sans "reviews" séparé
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Erreur lors de la récupération des films avec la note moyenne");
+    }
 });
+
 
 // Formulaire pour ajouter un film
 router.get('/movies/new', (req, res) => {
@@ -98,9 +128,10 @@ router.post('/movies', upload.single('poster'), async (req, res) => {
 
 // Formulaire pour modifier un film
 router.get('/movies/edit/:id', async (req, res) => {
-    const movie = await Movie.findById(req.params.id);
-    res.render('editMovie', { movie });
+  const movie = await Movie.findById(req.params.id);
+res.render('editMovie', { movie });
 });
+
 
 // Modifier un film (POST)
 router.post('/movies/edit/:id', upload.single('poster'), async (req, res) => {
@@ -138,5 +169,46 @@ router.get('/seances/new', async (req, res) => {
     const movies = await Movie.find();
     res.render('addSeance', { movies });
 });
+// Ajoute un avis pour un film
+router.post('/movies/:id/review', async (req, res) => {
+    const { userName, rating, comment } = req.body;
+    const movieId = req.params.id;
+
+    try {
+        const movie = await Movie.findById(movieId);
+        if (!movie) return res.status(404).send('Film non trouvé');
+
+        // Ajouter un nouvel avis dans le tableau des avis intégrés
+        movie.reviews.push({ userName: userName || 'Anonymous', rating, comment });
+        await movie.save();
+
+        res.redirect('/');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erreur lors de l\'ajout de l\'avis');
+    }
+});
+// Route pour obtenir la note moyenne d'un film
+router.get('/movies/:id/average-rating', async (req, res) => {
+    const movieId = req.params.id;
+
+    try {
+        const averageRating = await Movie.aggregate([
+            { $match: { _id: mongoose.Types.ObjectId(movieId) } },
+            { $unwind: "$reviews" },
+            { $group: { _id: "$_id", averageRating: { $avg: "$reviews.rating" } } }
+        ]);
+
+        if (averageRating.length > 0) {
+            res.json({ averageRating: averageRating[0].averageRating });
+        } else {
+            res.json({ averageRating: null });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erreur lors du calcul de la note moyenne');
+    }
+});
+
 
 module.exports = router;

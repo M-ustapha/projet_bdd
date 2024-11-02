@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const routes = require('./routes');
 
+
 const app = express();
 const PORT = 3000;
 
@@ -17,6 +18,8 @@ app.set('view engine', 'ejs');
 
 // Routes
 app.use('/', routes);
+app.use(bodyParser.json()); // Assurez-vous d'utiliser json pour le traitement des requêtes JSON
+
 
 // Lancement du serveur
 app.listen(PORT, () => {
